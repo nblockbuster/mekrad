@@ -1,16 +1,11 @@
-use tracing::level_filters::LevelFilter;
-use tracing_log::LogTracer;
-use tracing_subscriber::{EnvFilter, layer::SubscriberExt};
 
 mod gui;
 mod rad;
 mod unit;
 
-#[derive(clap::Args, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Config {
-    #[arg(short, long, default_value_t = 0.9995)]
     pub source_decay_rate: f64,
-    #[arg(short, long, default_value_t = 0.9995)]
     pub target_decay_rate: f64,
 }
 
@@ -23,14 +18,14 @@ impl Default for Config {
     }
 }
 
-// TODO: args
-#[derive(clap::Parser, Clone, Debug, Default)]
-pub struct Args {
-    #[command(flatten)]
-    pub cfg: Config,
-}
+// TODO: command line args?
 
+#[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
+    use tracing::level_filters::LevelFilter;
+    use tracing_log::LogTracer;
+    use tracing_subscriber::{EnvFilter, layer::SubscriberExt};
+    
     LogTracer::init().unwrap();
     tracing::subscriber::set_global_default(
         tracing_subscriber::registry()
@@ -55,4 +50,50 @@ fn main() -> eframe::Result {
         native_options,
         Box::new(|cc| Ok(Box::new(gui::RadiationApp::new(cc)))),
     )
+}
+
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    use eframe::wasm_bindgen::JsCast as _;
+
+    // Redirect `log` message to `console.log` and friends:
+    eframe::WebLogger::init(log::LevelFilter::Debug).ok();
+
+    let web_options = eframe::WebOptions::default();
+
+    wasm_bindgen_futures::spawn_local(async {
+        let document = web_sys::window()
+            .expect("No window")
+            .document()
+            .expect("No document");
+
+        let canvas = document
+            .get_element_by_id("the_canvas_id")
+            .expect("Failed to find the_canvas_id")
+            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .expect("the_canvas_id was not a HtmlCanvasElement");
+
+        let start_result = eframe::WebRunner::new()
+            .start(
+                canvas,
+                web_options,
+                Box::new(|cc| Ok(Box::new(gui::RadiationApp::new(cc)))),
+            )
+            .await;
+
+        // Remove the loading text and spinner:
+        if let Some(loading_text) = document.get_element_by_id("loading_text") {
+            match start_result {
+                Ok(_) => {
+                    loading_text.remove();
+                }
+                Err(e) => {
+                    loading_text.set_inner_html(
+                        "<p> The app has crashed. See the developer console for details. </p>",
+                    );
+                    panic!("Failed to start eframe: {e:?}");
+                }
+            }
+        }
+    });
 }

@@ -1,6 +1,5 @@
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-use tracing::instrument;
 
 #[derive(Debug, Clone, EnumIter)]
 pub enum MeasurementUnit {
@@ -21,7 +20,6 @@ pub enum MeasurementUnit {
 }
 
 impl MeasurementUnit {
-    #[instrument]
     pub fn unit(val: f64) -> Self {
         let mut f = MeasurementUnit::Base;
 
@@ -80,7 +78,6 @@ impl MeasurementUnit {
         val / self.value()
     }
 
-    #[instrument]
     pub fn display(&self, val: f64, unit: String, decimal_places: usize) -> String {
         format!(
             "{v:.prec$} {0}{1}",

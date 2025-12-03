@@ -1,5 +1,4 @@
 use egui::{Color32, Pos2, Rect};
-use tracing::instrument;
 
 use crate::{
     Config,
@@ -43,7 +42,6 @@ impl RadiationApp {
 }
 
 impl eframe::App for RadiationApp {
-    #[instrument(skip_all)]
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let height = egui::TopBottomPanel::top("settings")
             .show(ctx, |ui| {

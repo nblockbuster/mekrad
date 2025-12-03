@@ -4,14 +4,20 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = { version = "4.5.53", features = ["derive", "env"] }
 eframe = { version = "0.33.2", features = ["default_fonts", "persistence"] }
 egui = "0.33.2"
 glam = "0.30.9"
 log = "0.4.29"
 strum = { version = "0.27.2", features = ["strum_macros"] }
 strum_macros = "0.27.2"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# clap = { version = "4.5.53", features = ["derive", "env"] }
 tracing = "0.1.43"
 tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 tracing-tracy = "0.11.4"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen-futures = "0.4.50"
+web-sys = "0.3.70"

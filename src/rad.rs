@@ -43,7 +43,6 @@ pub struct RadiationInfo {
 }
 
 /// Appx. how long in ticks radiation of magnitude `mag` will take to decay.
-
 pub fn decay_time(cfg: &Config, mag: f64, is_source: bool) -> u64 {
     let decay_rate = if is_source {
         cfg.source_decay_rate
@@ -83,7 +82,6 @@ pub fn get_severity_color(magnitude: f64) -> Color32 {
 }
 
 /// Generates a 2D grid of radiation results for a given amount of rows and columns, from a RadiationInfo `src`
-
 pub fn grid_2d(
     src: &RadiationInfo,
     rows: usize,

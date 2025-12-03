@@ -22,7 +22,7 @@ pub struct RadiationApp {
 
     selected_material: RadioactiveMaterial,
 
-    cell_size: f32,
+    cell_size: usize,
 }
 
 const ROWS: usize = 100;
@@ -31,13 +31,18 @@ const COLUMNS: usize = 100;
 impl RadiationApp {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self {
-            cell_size: 1.0,
+            cell_size: 1,
             ..Default::default()
         }
     }
 
     fn regenerate(&mut self) {
-        self.rad_result = Some(grid_2d(&self.rad_source, ROWS, COLUMNS, self.cell_size));
+        self.rad_result = Some(grid_2d(
+            &self.rad_source,
+            ROWS,
+            COLUMNS,
+            self.cell_size as f32,
+        ));
     }
 }
 
@@ -64,7 +69,7 @@ impl eframe::App for RadiationApp {
 
                     ui.label("Cell Size");
                     if ui
-                        .add(egui::Slider::new(&mut self.cell_size, 1.0..=128.0))
+                        .add(egui::Slider::new(&mut self.cell_size, 1..=512))
                         .changed()
                     {
                         self.regenerate()

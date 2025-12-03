@@ -7,6 +7,36 @@ use crate::Config;
 pub const BASELINE: f64 = 0.000_000_100; // 100 nSv/h
 pub const MIN_MAGNITUDE: f64 = 0.000_010; // 10 uSv/h
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RadioactiveMaterial {
+    #[default]
+    None,
+    // Spent is the same as basic waste
+    NuclearWaste,
+    Plutonium,
+    Polonium,
+}
+
+impl RadioactiveMaterial {
+    pub fn value(&self) -> f64 {
+        // All values are in Sv/mB
+        match self {
+            Self::None => 0.0,
+            Self::NuclearWaste => 0.010,
+            Self::Plutonium => 0.020,
+            Self::Polonium => 0.050,
+        }
+    }
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::None => "None",
+            Self::NuclearWaste => "Nuclear Waste",
+            Self::Plutonium => "Plutonium",
+            Self::Polonium => "Polonium",
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct RadiationInfo {
     pub pos: Vec3,

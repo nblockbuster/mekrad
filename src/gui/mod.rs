@@ -1,10 +1,12 @@
 use egui::{Color32, Pos2, Rect};
-use glam::Vec3;
 use tracing::instrument;
 
 use crate::{
     Config,
-    rad::{BASELINE, MIN_MAGNITUDE, RadiationInfo, decay_time, get_severity_color, grid_2d},
+    rad::{
+        BASELINE, MIN_MAGNITUDE, RadiationInfo, RadioactiveMaterial, decay_time,
+        get_severity_color, grid_2d,
+    },
 };
 
 #[derive(Default)]
@@ -16,6 +18,11 @@ pub struct RadiationApp {
     rad_magnitude_text: String,
     rad_result: Option<Vec<Vec<RadiationInfo>>>,
 
+    rad_material_text: String,
+    rad_material_mb: f64,
+
+    selected_material: RadioactiveMaterial,
+
     cell_size: f32,
 }
 
@@ -25,15 +32,13 @@ const COLUMNS: usize = 100;
 impl RadiationApp {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self {
-            rad_source: RadiationInfo {
-                pos: Vec3::new(0.0, 0.0, 0.0),
-                magnitude: 0.0,
-            },
-            rad_result: None,
-            config: Config::default(),
-            rad_magnitude_text: String::new(),
             cell_size: 1.0,
+            ..Default::default()
         }
+    }
+
+    fn regenerate(&mut self) {
+        self.rad_result = Some(grid_2d(&self.rad_source, ROWS, COLUMNS, self.cell_size));
     }
 }
 
@@ -43,24 +48,76 @@ impl eframe::App for RadiationApp {
         let height = egui::TopBottomPanel::top("settings")
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
+                    let last_sv_src = self.rad_magnitude_text.clone();
+
                     ui.label("Radiation Source (Sv): ");
                     if ui
-                        .text_edit_singleline(&mut self.rad_magnitude_text)
+                        .add(
+                            egui::TextEdit::singleline(&mut self.rad_magnitude_text)
+                                .desired_width(50.),
+                        )
                         .lost_focus()
+                        && self.rad_magnitude_text != last_sv_src
                         && let Ok(m) = self.rad_magnitude_text.parse()
-                        && m != self.rad_source.magnitude
                     {
                         self.rad_source.magnitude = m;
-                        self.rad_result =
-                            Some(grid_2d(&self.rad_source, ROWS, COLUMNS, self.cell_size));
+                        self.regenerate();
                     };
+
                     ui.label("Cell Size");
                     if ui
                         .add(egui::Slider::new(&mut self.cell_size, 1.0..=128.0))
                         .changed()
                     {
-                        self.rad_result =
-                            Some(grid_2d(&self.rad_source, ROWS, COLUMNS, self.cell_size));
+                        self.regenerate()
+                    }
+
+                    ui.label("Radioactive Material (mB): ");
+                    if ui
+                        .add(
+                            egui::TextEdit::singleline(&mut self.rad_material_text)
+                                .desired_width(50.),
+                        )
+                        .lost_focus()
+                        && let Ok(m) = self.rad_material_text.parse()
+                        && self.rad_material_mb != m
+                    {
+                        self.rad_material_mb = m;
+                        self.rad_source.magnitude =
+                            self.selected_material.value() * self.rad_material_mb;
+                        self.regenerate()
+                    };
+
+                    let before = self.selected_material;
+                    egui::ComboBox::from_label("Radioactive Material")
+                        .selected_text(self.selected_material.name())
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.selected_material,
+                                RadioactiveMaterial::None,
+                                "None",
+                            );
+                            ui.selectable_value(
+                                &mut self.selected_material,
+                                RadioactiveMaterial::NuclearWaste,
+                                "Nuclear Waste",
+                            );
+                            ui.selectable_value(
+                                &mut self.selected_material,
+                                RadioactiveMaterial::Plutonium,
+                                "Plutonium",
+                            );
+                            ui.selectable_value(
+                                &mut self.selected_material,
+                                RadioactiveMaterial::Polonium,
+                                "Polonium",
+                            );
+                        });
+
+                    if self.selected_material != before {
+                        self.rad_source.magnitude =
+                            self.selected_material.value() * self.rad_material_mb;
+                        self.regenerate();
                     }
                 });
                 ui.add_space(5.0);
@@ -115,8 +172,8 @@ impl eframe::App for RadiationApp {
                                 ui.label(rad_info.pos.to_string());
                                 if rad_info.magnitude > BASELINE {
                                     ui.label(
-                                        crate::unit::MeasurementUnit::get_unit(rad_info.magnitude)
-                                            .get_display(rad_info.magnitude, "Sv".to_string(), 3)
+                                        crate::unit::MeasurementUnit::unit(rad_info.magnitude)
+                                            .display(rad_info.magnitude, "Sv".to_string(), 3)
                                             .to_string(),
                                     );
                                     if rad_info.magnitude > MIN_MAGNITUDE {
@@ -131,8 +188,11 @@ impl eframe::App for RadiationApp {
                                 } else {
                                     ui.label(format!(
                                         "Background Radiation ({})",
-                                        crate::unit::MeasurementUnit::get_unit(BASELINE)
-                                            .get_display(BASELINE, "Sv".to_string(), 3)
+                                        crate::unit::MeasurementUnit::unit(BASELINE).display(
+                                            BASELINE,
+                                            "Sv".to_string(),
+                                            3
+                                        )
                                     ));
                                 }
                             });

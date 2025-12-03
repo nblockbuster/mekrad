@@ -22,14 +22,14 @@ pub enum MeasurementUnit {
 
 impl MeasurementUnit {
     #[instrument]
-    pub fn get_unit(val: f64) -> Self {
+    pub fn unit(val: f64) -> Self {
         let mut f = MeasurementUnit::Base;
 
         let units = Self::iter().collect::<Vec<_>>();
         for (i, unit) in units.clone().into_iter().enumerate() {
-            if (i == 0 && val < unit.get_value())
+            if (i == 0 && val < unit.value())
                 || i + 1 >= units.len()
-                || (val >= unit.get_value() && val < units[i + 1].get_value())
+                || (val >= unit.value() && val < units[i + 1].value())
             {
                 f = unit.clone();
                 break;
@@ -38,7 +38,7 @@ impl MeasurementUnit {
         f
     }
 
-    pub fn get_symbol(&self) -> &'static str {
+    pub fn symbol(&self) -> &'static str {
         match self {
             MeasurementUnit::Femto => "f",
             MeasurementUnit::Pico => "p",
@@ -57,7 +57,7 @@ impl MeasurementUnit {
         }
     }
 
-    pub fn get_value(&self) -> f64 {
+    pub fn value(&self) -> f64 {
         match self {
             MeasurementUnit::Femto => 0.000_000_000_000_001,
             MeasurementUnit::Pico => 0.000_000_000_001,
@@ -77,14 +77,14 @@ impl MeasurementUnit {
     }
 
     pub fn process(&self, val: f64) -> f64 {
-        val / self.get_value()
+        val / self.value()
     }
 
     #[instrument]
-    pub fn get_display(&self, val: f64, unit: String, decimal_places: usize) -> String {
+    pub fn display(&self, val: f64, unit: String, decimal_places: usize) -> String {
         format!(
             "{v:.prec$} {0}{1}",
-            self.get_symbol(),
+            self.symbol(),
             unit,
             v = if val.is_sign_negative() {
                 self.process(-val)

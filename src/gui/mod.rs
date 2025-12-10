@@ -23,6 +23,7 @@ pub struct RadiationApp {
     selected_material: RadioactiveMaterial,
 
     cell_size: usize,
+    height: isize,
 }
 
 const ROWS: usize = 100;
@@ -42,6 +43,7 @@ impl RadiationApp {
             ROWS,
             COLUMNS,
             self.cell_size as f32,
+            self.height as f32,
         ));
     }
 }
@@ -69,7 +71,15 @@ impl eframe::App for RadiationApp {
 
                     ui.label("Cell Size");
                     if ui
-                        .add(egui::Slider::new(&mut self.cell_size, 1..=512))
+                        .add(egui::Slider::new(&mut self.cell_size, 1..=256))
+                        .changed()
+                    {
+                        self.regenerate()
+                    }
+
+                    ui.label("Slice Height");
+                    if ui
+                        .add(egui::Slider::new(&mut self.height, -128..=128))
                         .changed()
                     {
                         self.regenerate()
@@ -167,6 +177,8 @@ impl eframe::App for RadiationApp {
                         );
                         let response =
                             ui.interact(rect, format!("x{}y{}", x, y).into(), egui::Sense::click());
+
+                        // TODO: add window to get extra extra info?
 
                         egui::Popup::menu(&response)
                             .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)

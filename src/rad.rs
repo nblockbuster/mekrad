@@ -87,6 +87,7 @@ pub fn grid_2d(
     rows: usize,
     columns: usize,
     cell_size: f32,
+    height: f32,
 ) -> Vec<Vec<RadiationInfo>> {
     let mut info = Vec::new();
 
@@ -104,7 +105,7 @@ pub fn grid_2d(
             let pos = Vec3::new(
                 // We're flipping X and Y here so that -Z is up/north and -X is left/west
                 center.z + x as f32 * cell_size,
-                origin.y,
+                height,
                 center.x + y as f32 * cell_size,
             );
             col.push(RadiationInfo {
